@@ -1,0 +1,16 @@
+# --- Server & API ---
+fastapi
+uvicorn
+pydantic
+python-multipart   # REQUIRED for file uploads
+python-dotenv      
+
+# --- AI & Embeddings (Free Stack) ---
+google-generativeai
+sentence-transformers
+faiss-cpu
+numpy
+
+# --- PDF Handling ---
+pypdf              # Reading PDFs (Your choice)
+reportlab          # Creating PDFs (Keep if you generate reports)

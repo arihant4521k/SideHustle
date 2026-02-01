@@ -1,6 +1,7 @@
 import os
 import shutil
 from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
 
@@ -12,7 +13,26 @@ from rag.chunking import chunk_text
 from rag.embed_store import build_and_save_index, load_index
 from rag.rag_answer import retrieve, generate_answer
 
-app = FastAPI()
+app = FastAPI(
+    title="RAG ChatBot API",
+    description="A Retrieval Augmented Generation API for document Q&A",
+    version="1.0.0"
+)
+
+# CORS middleware for frontend connectivity
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Health check endpoint
+@app.get("/health")
+def health_check():
+    """Health check endpoint for connectivity testing"""
+    return {"status": "healthy", "service": "RAG-ChatBot-API", "version": "1.0.0"}
 
 # Setup paths
 BASE_DIR = os.path.dirname(__file__)
@@ -76,17 +96,23 @@ def ingest():
 def chat(payload: ChatIn):
     global index, chunks
 
-    # Lazy load if server restarted
-    if index is None or chunks is None:
-        if os.path.exists(INDEX_PATH) and os.path.exists(META_PATH):
-            index, chunks = load_index(INDEX_PATH, META_PATH)
-        else:
-            return {"answer": "System not ready. Please upload a PDF and run /ingest first."}
+    try:
+        # Lazy load if server restarted
+        if index is None or chunks is None:
+            if os.path.exists(INDEX_PATH) and os.path.exists(META_PATH):
+                index, chunks = load_index(INDEX_PATH, META_PATH)
+            else:
+                return {"answer": "System not ready. Please upload a PDF and run /ingest first."}
 
-    hits = retrieve(payload.message, index, chunks)
-    answer = generate_answer(payload.message, hits)
+        hits = retrieve(payload.message, index, chunks)
+        answer = generate_answer(payload.message, hits)
 
-    return {"answer": answer}
+        return {"answer": answer}
+    except Exception as e:
+        import traceback
+        print(f"Error in /chat endpoint: {e}")
+        traceback.print_exc()
+        return {"answer": f"Error processing your request: {str(e)}"}
 
 # OPNEAI Dependancy
 

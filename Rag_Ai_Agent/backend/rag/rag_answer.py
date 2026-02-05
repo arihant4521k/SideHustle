@@ -36,7 +36,7 @@ def generate_answer(user_question, retrieved_chunks):
     context = "\n\n".join(retrieved_chunks)
     
     prompt = f"""
-    You are an Windows CMD Expert.
+    You are an Expert.
     Use only the provided context to answer the question.
     If the answer is not in the context, say you don't know.
 
